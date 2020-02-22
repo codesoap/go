@@ -13,7 +13,6 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
-	"strings"
 	"unicode"
 	"unicode/utf16"
 	"unicode/utf8"
@@ -208,7 +207,7 @@ type decodeState struct {
 	scan         scanner
 	errorContext struct { // provides context for type errors
 		Struct     reflect.Type
-		FieldStack []string
+		FieldStack []byte
 	}
 	savedError            error
 	useNumber             bool
@@ -234,7 +233,7 @@ func (d *decodeState) init(data []byte) *decodeState {
 	d.savedError = nil
 	d.errorContext.Struct = nil
 
-	// Reuse the allocated space for the FieldStack slice.
+	// Reuse the allocated space for FieldStack.
 	d.errorContext.FieldStack = d.errorContext.FieldStack[:0]
 	return d
 }
@@ -253,7 +252,7 @@ func (d *decodeState) addErrorContext(err error) error {
 		switch err := err.(type) {
 		case *UnmarshalTypeError:
 			err.Struct = d.errorContext.Struct.Name()
-			err.Field = strings.Join(d.errorContext.FieldStack, ".")
+			err.Field = string(d.errorContext.FieldStack)
 			return err
 		}
 	}
@@ -749,7 +748,10 @@ func (d *decodeState) object(v reflect.Value) error {
 					}
 					subv = subv.Field(i)
 				}
-				d.errorContext.FieldStack = append(d.errorContext.FieldStack, f.name)
+				if len(d.errorContext.FieldStack) > 0 {
+					d.errorContext.FieldStack = append(d.errorContext.FieldStack, '.')
+				}
+				d.errorContext.FieldStack = append(d.errorContext.FieldStack, f.name...)
 				d.errorContext.Struct = t
 			} else if d.disallowUnknownFields {
 				d.saveError(fmt.Errorf("json: unknown field %q", key))
