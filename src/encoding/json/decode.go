@@ -265,7 +265,7 @@ func (d *decodeState) skip() {
 	s, data, i := &d.scan, d.data, d.off
 	depth := len(s.parseState)
 	for {
-		op := s.step(s, data[i])
+		op := s.executeStep(data[i])
 		i++
 		if len(s.parseState) < depth {
 			d.off = i
@@ -278,7 +278,7 @@ func (d *decodeState) skip() {
 // scanNext processes the byte at d.data[d.off].
 func (d *decodeState) scanNext() {
 	if d.off < len(d.data) {
-		d.opcode = d.scan.step(&d.scan, d.data[d.off])
+		d.opcode = d.scan.executeStep(d.data[d.off])
 		d.off++
 	} else {
 		d.opcode = d.scan.eof()
@@ -291,7 +291,7 @@ func (d *decodeState) scanNext() {
 func (d *decodeState) scanWhile(op int) {
 	s, data, i := &d.scan, d.data, d.off
 	for i < len(data) {
-		newOp := s.step(s, data[i])
+		newOp := s.executeStep(data[i])
 		i++
 		if newOp != op {
 			d.opcode = newOp
@@ -357,7 +357,8 @@ Switch:
 		i += len("ull")
 	}
 	if i < len(data) {
-		d.opcode = stateEndValue(&d.scan, data[i])
+		d.scan.step = stateEndValue
+		d.opcode = d.scan.executeStep(data[i])
 	} else {
 		d.opcode = scanEnd
 	}

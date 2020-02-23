@@ -100,7 +100,7 @@ Input:
 		for ; scanp < len(dec.buf); scanp++ {
 			c := dec.buf[scanp]
 			dec.scan.bytes++
-			switch dec.scan.step(&dec.scan, c) {
+			switch dec.scan.executeStep(c) {
 			case scanEnd:
 				// scanEnd is delayed one byte so we decrement
 				// the scanner bytes count by 1 to ensure that
@@ -111,7 +111,8 @@ Input:
 				// scanEnd is delayed one byte.
 				// We might block trying to get that byte from src,
 				// so instead invent a space byte.
-				if stateEndValue(&dec.scan, ' ') == scanEnd {
+				dec.scan.step = stateEndValue
+				if dec.scan.executeStep(' ') == scanEnd {
 					scanp++
 					break Input
 				}
@@ -125,7 +126,7 @@ Input:
 		// Delayed until now to allow buffer scan.
 		if err != nil {
 			if err == io.EOF {
-				if dec.scan.step(&dec.scan, ' ') == scanEnd {
+				if dec.scan.executeStep(' ') == scanEnd {
 					break Input
 				}
 				if nonSpace(dec.buf) {
