@@ -12,7 +12,7 @@ import (
 )
 
 var foldTests = []struct {
-	fn   func(s, t []byte) bool
+	fn   func(s, t string) bool
 	s, t string
 	want bool
 }{
@@ -41,7 +41,7 @@ var foldTests = []struct {
 
 func TestFold(t *testing.T) {
 	for i, tt := range foldTests {
-		if got := tt.fn([]byte(tt.s), []byte(tt.t)); got != tt.want {
+		if got := tt.fn(tt.s, tt.t); got != tt.want {
 			t.Errorf("%d. %q, %q = %v; want %v", i, tt.s, tt.t, got, tt.want)
 		}
 		truth := strings.EqualFold(tt.s, tt.t)
@@ -63,7 +63,7 @@ func TestFoldAgainstUnicode(t *testing.T) {
 
 	funcs := []struct {
 		name   string
-		fold   func(s, t []byte) bool
+		fold   func(s, t string) bool
 		letter bool // must be ASCII letter
 		simple bool // must be simple ASCII letter (not 'S' or 'K')
 	}{
@@ -103,7 +103,7 @@ func TestFoldAgainstUnicode(t *testing.T) {
 				buf1 = append(buf1, 'x')
 				buf2 = append(buf2, 'x')
 				want := bytes.EqualFold(buf1, buf2)
-				if got := ff.fold(buf1, buf2); got != want {
+				if got := ff.fold(string(buf1), string(buf2)); got != want {
 					t.Errorf("%s(%q, %q) = %v; want %v", ff.name, buf1, buf2, got, want)
 				}
 			}

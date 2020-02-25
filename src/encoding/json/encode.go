@@ -1142,8 +1142,7 @@ func (e *encodeState) stringBytes(s []byte, escapeHTML bool) {
 // A field represents a single field found in a struct.
 type field struct {
 	name      string
-	nameBytes []byte                 // []byte(name)
-	equalFold func(s, t []byte) bool // bytes.EqualFold or equivalent
+	equalFold func(s, t string) bool // bytes.EqualFold or equivalent
 
 	nameNonEsc  string // `"` + name + `":`
 	nameEscHTML string // `"` + HTMLEscape(name) + `":`
@@ -1270,13 +1269,12 @@ func typeFields(t reflect.Type) structFields {
 						omitEmpty: opts.Contains("omitempty"),
 						quoted:    quoted,
 					}
-					field.nameBytes = []byte(field.name)
-					field.equalFold = foldFunc(field.nameBytes)
+					field.equalFold = foldFunc(field.name)
 
 					// Build nameEscHTML and nameNonEsc ahead of time.
 					nameEscBuf.Reset()
 					nameEscBuf.WriteString(`"`)
-					HTMLEscape(&nameEscBuf, field.nameBytes)
+					HTMLEscape(&nameEscBuf, []byte(field.name))
 					nameEscBuf.WriteString(`":`)
 					field.nameEscHTML = nameEscBuf.String()
 					field.nameNonEsc = `"` + field.name + `":`

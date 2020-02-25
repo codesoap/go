@@ -5,7 +5,7 @@
 package json
 
 import (
-	"bytes"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -30,12 +30,12 @@ const (
 //
 // The returned function is specialized for matching against s and
 // should only be given s. It's not curried for performance reasons.
-func foldFunc(s []byte) func(s, t []byte) bool {
+func foldFunc(s string) func(s, t string) bool {
 	nonLetter := false
 	special := false // special letter
-	for _, b := range s {
+	for _, b := range []byte(s) {
 		if b >= utf8.RuneSelf {
-			return bytes.EqualFold
+			return strings.EqualFold
 		}
 		upper := b & caseMask
 		if upper < 'A' || upper > 'Z' {
@@ -58,8 +58,8 @@ func foldFunc(s []byte) func(s, t []byte) bool {
 // known to be all ASCII (including punctuation), but contains an 's',
 // 'S', 'k', or 'K', requiring a Unicode fold on the bytes in t.
 // See comments on foldFunc.
-func equalFoldRight(s, t []byte) bool {
-	for _, sb := range s {
+func equalFoldRight(s, t string) bool {
+	for _, sb := range []byte(s) {
 		if len(t) == 0 {
 			return false
 		}
@@ -80,7 +80,7 @@ func equalFoldRight(s, t []byte) bool {
 		}
 		// sb is ASCII and t is not. t must be either kelvin
 		// sign or long s; sb must be s, S, k, or K.
-		tr, size := utf8.DecodeRune(t)
+		tr, size := utf8.DecodeRune([]byte(t))
 		switch sb {
 		case 's', 'S':
 			if tr != smallLongEss {
@@ -106,11 +106,11 @@ func equalFoldRight(s, t []byte) bool {
 // s is all ASCII (but may contain non-letters) and contains no
 // special-folding letters.
 // See comments on foldFunc.
-func asciiEqualFold(s, t []byte) bool {
+func asciiEqualFold(s, t string) bool {
 	if len(s) != len(t) {
 		return false
 	}
-	for i, sb := range s {
+	for i, sb := range []byte(s) {
 		tb := t[i]
 		if sb == tb {
 			continue
@@ -130,11 +130,11 @@ func asciiEqualFold(s, t []byte) bool {
 // use when s is all ASCII letters (no underscores, etc) and also
 // doesn't contain 'k', 'K', 's', or 'S'.
 // See comments on foldFunc.
-func simpleLetterEqualFold(s, t []byte) bool {
+func simpleLetterEqualFold(s, t string) bool {
 	if len(s) != len(t) {
 		return false
 	}
-	for i, b := range s {
+	for i, b := range []byte(s) {
 		if b&caseMask != t[i]&caseMask {
 			return false
 		}

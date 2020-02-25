@@ -718,7 +718,7 @@ func (d *decodeState) object(v reflect.Value) error {
 				// linear search.
 				for i := range fields.list {
 					ff := &fields.list[i]
-					if ff.equalFold(ff.nameBytes, key) {
+					if ff.equalFold(ff.name, string(key)) {
 						f = ff
 						break
 					}
