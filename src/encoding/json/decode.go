@@ -691,10 +691,11 @@ func (d *decodeState) object(v reflect.Value) error {
 		start := d.readIndex()
 		d.rescanLiteral()
 		item := d.data[start:d.readIndex()]
-		key, ok := d.unquoteBytes(item)
+		keyb, ok := d.unquoteBytes(item)
 		if !ok {
 			panic(phasePanicMsg)
 		}
+		key := string(keyb)
 
 		// Figure out field corresponding to key.
 		var subv reflect.Value
@@ -710,7 +711,7 @@ func (d *decodeState) object(v reflect.Value) error {
 			subv = mapElem
 		} else {
 			var f *field
-			if i, ok := fields.nameIndex[string(key)]; ok {
+			if i, ok := fields.nameIndex[key]; ok {
 				// Found an exact name match.
 				f = &fields.list[i]
 			} else {
@@ -718,7 +719,7 @@ func (d *decodeState) object(v reflect.Value) error {
 				// linear search.
 				for i := range fields.list {
 					ff := &fields.list[i]
-					if ff.equalFold(ff.name, string(key)) {
+					if ff.equalFold(ff.name, key) {
 						f = ff
 						break
 					}
@@ -752,7 +753,7 @@ func (d *decodeState) object(v reflect.Value) error {
 				d.errorContext.FieldStack = append(d.errorContext.FieldStack, f.name)
 				d.errorContext.Struct = t
 			} else if d.disallowUnknownFields {
-				d.saveError(fmt.Errorf("json: unknown field %q", key))
+				d.saveError(fmt.Errorf("json: unknown field %q", keyb))
 			}
 		}
 
@@ -797,11 +798,11 @@ func (d *decodeState) object(v reflect.Value) error {
 				}
 				kv = kv.Elem()
 			case kt.Kind() == reflect.String:
-				kv = reflect.ValueOf(key).Convert(kt)
+				kv = reflect.ValueOf(keyb).Convert(kt)
 			default:
 				switch kt.Kind() {
 				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-					s := string(key)
+					s := key
 					n, err := strconv.ParseInt(s, 10, 64)
 					if err != nil || reflect.Zero(kt).OverflowInt(n) {
 						d.saveError(&UnmarshalTypeError{Value: "number " + s, Type: kt, Offset: int64(start + 1)})
@@ -809,7 +810,7 @@ func (d *decodeState) object(v reflect.Value) error {
 					}
 					kv = reflect.ValueOf(n).Convert(kt)
 				case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-					s := string(key)
+					s := key
 					n, err := strconv.ParseUint(s, 10, 64)
 					if err != nil || reflect.Zero(kt).OverflowUint(n) {
 						d.saveError(&UnmarshalTypeError{Value: "number " + s, Type: kt, Offset: int64(start + 1)})

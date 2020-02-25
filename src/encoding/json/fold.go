@@ -80,7 +80,7 @@ func equalFoldRight(s, t string) bool {
 		}
 		// sb is ASCII and t is not. t must be either kelvin
 		// sign or long s; sb must be s, S, k, or K.
-		tr, size := utf8.DecodeRune([]byte(t))
+		tr, size := utf8.DecodeRuneInString(t)
 		switch sb {
 		case 's', 'S':
 			if tr != smallLongEss {
