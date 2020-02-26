@@ -749,7 +749,7 @@ func (d *decodeState) object(v reflect.Value) error {
 					}
 					subv = subv.Field(i)
 				}
-				d.errorContext.FieldStack = append(d.errorContext.FieldStack, f.name)
+				//d.errorContext.FieldStack = append(d.errorContext.FieldStack, f.name)
 				d.errorContext.Struct = t
 			} else if d.disallowUnknownFields {
 				d.saveError(fmt.Errorf("json: unknown field %q", key))
@@ -832,7 +832,7 @@ func (d *decodeState) object(v reflect.Value) error {
 		// Reset errorContext to its original state.
 		// Keep the same underlying array for FieldStack, to reuse the
 		// space and avoid unnecessary allocs.
-		d.errorContext.FieldStack = d.errorContext.FieldStack[:len(origErrorContext.FieldStack)]
+		//d.errorContext.FieldStack = d.errorContext.FieldStack[:len(origErrorContext.FieldStack)]
 		d.errorContext.Struct = origErrorContext.Struct
 		if d.opcode == scanEndObject {
 			break

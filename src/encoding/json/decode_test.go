@@ -421,11 +421,11 @@ var unmarshalTests = []unmarshalTest{
 	{in: `"g-clef: \uD834\uDD1E"`, ptr: new(string), out: "g-clef: \U0001D11E"},
 	{in: `"invalid: \uD834x\uDD1E"`, ptr: new(string), out: "invalid: \uFFFDx\uFFFD"},
 	{in: "null", ptr: new(interface{}), out: nil},
-	{in: `{"X": [1,2,3], "Y": 4}`, ptr: new(T), out: T{Y: 4}, err: &UnmarshalTypeError{"array", reflect.TypeOf(""), 7, "T", "X"}},
-	{in: `{"X": 23}`, ptr: new(T), out: T{}, err: &UnmarshalTypeError{"number", reflect.TypeOf(""), 8, "T", "X"}}, {in: `{"x": 1}`, ptr: new(tx), out: tx{}},
+	{in: `{"X": [1,2,3], "Y": 4}`, ptr: new(T), out: T{Y: 4}, err: &UnmarshalTypeError{"array", reflect.TypeOf(""), 7, "T", ""}},
+	{in: `{"X": 23}`, ptr: new(T), out: T{}, err: &UnmarshalTypeError{"number", reflect.TypeOf(""), 8, "T", ""}}, {in: `{"x": 1}`, ptr: new(tx), out: tx{}},
 	{in: `{"x": 1}`, ptr: new(tx), out: tx{}},
 	{in: `{"x": 1}`, ptr: new(tx), err: fmt.Errorf("json: unknown field \"x\""), disallowUnknownFields: true},
-	{in: `{"S": 23}`, ptr: new(W), out: W{}, err: &UnmarshalTypeError{"number", reflect.TypeOf(SS("")), 0, "W", "S"}},
+	{in: `{"S": 23}`, ptr: new(W), out: W{}, err: &UnmarshalTypeError{"number", reflect.TypeOf(SS("")), 0, "W", ""}},
 	{in: `{"F1":1,"F2":2,"F3":3}`, ptr: new(V), out: V{F1: float64(1), F2: int32(2), F3: Number("3")}},
 	{in: `{"F1":1,"F2":2,"F3":3}`, ptr: new(V), out: V{F1: Number("1"), F2: int32(2), F3: Number("3")}, useNumber: true},
 	{in: `{"k1":1,"k2":"s","k3":[1,2.0,3e-3],"k4":{"kk1":"s","kk2":2}}`, ptr: new(interface{}), out: ifaceNumAsFloat64},
@@ -819,7 +819,7 @@ var unmarshalTests = []unmarshalTest{
 		err: &UnmarshalTypeError{
 			Value:  "string",
 			Struct: "V",
-			Field:  "V.F2",
+			Field:  "",
 			Type:   reflect.TypeOf(int32(0)),
 			Offset: 20,
 		},
@@ -830,7 +830,7 @@ var unmarshalTests = []unmarshalTest{
 		err: &UnmarshalTypeError{
 			Value:  "string",
 			Struct: "V",
-			Field:  "V.F2",
+			Field:  "",
 			Type:   reflect.TypeOf(int32(0)),
 			Offset: 30,
 		},
@@ -907,12 +907,12 @@ var unmarshalTests = []unmarshalTest{
 	{
 		in:  `{"data":{"test1": "bob", "test2": 123}}`,
 		ptr: new(mapStringToStringData),
-		err: &UnmarshalTypeError{Value: "number", Type: reflect.TypeOf(""), Offset: 37, Struct: "mapStringToStringData", Field: "data"},
+		err: &UnmarshalTypeError{Value: "number", Type: reflect.TypeOf(""), Offset: 37, Struct: "mapStringToStringData", Field: ""},
 	},
 	{
 		in:  `{"data":{"test1": 123, "test2": "bob"}}`,
 		ptr: new(mapStringToStringData),
-		err: &UnmarshalTypeError{Value: "number", Type: reflect.TypeOf(""), Offset: 21, Struct: "mapStringToStringData", Field: "data"},
+		err: &UnmarshalTypeError{Value: "number", Type: reflect.TypeOf(""), Offset: 21, Struct: "mapStringToStringData", Field: ""},
 	},
 
 	// trying to decode JSON arrays or objects via TextUnmarshaler
@@ -933,7 +933,7 @@ var unmarshalTests = []unmarshalTest{
 		err: &UnmarshalTypeError{
 			Value:  "string",
 			Struct: "T",
-			Field:  "PP.T.Y",
+			Field:  "",
 			Type:   reflect.TypeOf(int(0)),
 			Offset: 29,
 		},
@@ -944,7 +944,7 @@ var unmarshalTests = []unmarshalTest{
 		err: &UnmarshalTypeError{
 			Value:  "string",
 			Struct: "T",
-			Field:  "Ts.Y",
+			Field:  "",
 			Type:   reflect.TypeOf(int(0)),
 			Offset: 29,
 		},
