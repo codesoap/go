@@ -907,12 +907,12 @@ var unmarshalTests = []unmarshalTest{
 	{
 		in:  `{"data":{"test1": "bob", "test2": 123}}`,
 		ptr: new(mapStringToStringData),
-		err: &UnmarshalTypeError{Value: "number", Type: reflect.TypeOf(""), Offset: 37, Struct: "mapStringToStringData", Field: "data"},
+		err: &UnmarshalTypeError{Value: "number", Type: reflect.TypeOf(""), Offset: 37, Struct: "mapStringToStringData", Field: "data.test2"},
 	},
 	{
 		in:  `{"data":{"test1": 123, "test2": "bob"}}`,
 		ptr: new(mapStringToStringData),
-		err: &UnmarshalTypeError{Value: "number", Type: reflect.TypeOf(""), Offset: 21, Struct: "mapStringToStringData", Field: "data"},
+		err: &UnmarshalTypeError{Value: "number", Type: reflect.TypeOf(""), Offset: 21, Struct: "mapStringToStringData", Field: "data.test1"},
 	},
 
 	// trying to decode JSON arrays or objects via TextUnmarshaler

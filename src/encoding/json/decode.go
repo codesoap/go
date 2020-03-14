@@ -202,14 +202,11 @@ func (n Number) Int64() (int64, error) {
 
 // decodeState represents the state while decoding a JSON value.
 type decodeState struct {
-	data         []byte
-	off          int // next read offset in data
-	opcode       int // last read result
-	scan         scanner
-	errorContext struct { // provides context for type errors
-		Struct     reflect.Type
-		FieldStack []string
-	}
+	data                  []byte
+	off                   int // next read offset in data
+	opcode                int // last read result
+	scan                  scanner
+	errorStruct           reflect.Type // provides context for type errors
 	savedError            error
 	useNumber             bool
 	disallowUnknownFields bool
@@ -232,10 +229,7 @@ func (d *decodeState) init(data []byte) *decodeState {
 	d.data = data
 	d.off = 0
 	d.savedError = nil
-	d.errorContext.Struct = nil
-
-	// Reuse the allocated space for the FieldStack slice.
-	d.errorContext.FieldStack = d.errorContext.FieldStack[:0]
+	d.errorStruct = nil
 	return d
 }
 
@@ -247,17 +241,53 @@ func (d *decodeState) saveError(err error) {
 	}
 }
 
-// addErrorContext returns a new error enhanced with information from d.errorContext
+// addErrorContext returns a new error with enhanced information.
 func (d *decodeState) addErrorContext(err error) error {
-	if d.errorContext.Struct != nil || len(d.errorContext.FieldStack) > 0 {
+	if d.errorStruct != nil {
 		switch err := err.(type) {
 		case *UnmarshalTypeError:
-			err.Struct = d.errorContext.Struct.Name()
-			err.Field = strings.Join(d.errorContext.FieldStack, ".")
-			return err
+			err.Struct = d.errorStruct.Name()
+			err.Field = d.getField(d.off)
 		}
 	}
 	return err
+}
+
+func (d *decodeState) getField(errOff int) string {
+	var fieldStack []string
+	dLocal := *d
+	dLocal.scan.parseState = make([]int, 0)
+	dLocal.off = 0
+	dLocal.scan.reset()
+	for dLocal.off < errOff-1 {
+		dLocal.scanNext()
+		parseState := dLocal.scan.parseState
+		if dLocal.opcode == scanObjectValue || dLocal.opcode == scanEndObject {
+			fieldStack = fieldStack[:len(fieldStack)-1]
+		} else if parseState[len(parseState)-1] == parseObjectKey {
+			// Read opening " of string key or closing }.
+			dLocal.scanWhile(scanSkipSpace)
+			if dLocal.opcode == scanEndObject {
+				// closing }; this is an empty object.
+				continue
+			}
+			if dLocal.opcode != scanBeginLiteral {
+				panic(phasePanicMsg)
+			}
+
+			// Read key.
+			start := dLocal.readIndex()
+			dLocal.rescanLiteral()
+			item := dLocal.data[start:dLocal.readIndex()]
+			key, ok := dLocal.unquoteBytes(item)
+			if !ok {
+				panic(phasePanicMsg)
+			}
+
+			fieldStack = append(fieldStack, string(key))
+		}
+	}
+	return strings.Join(fieldStack, ".")
 }
 
 // skip scans to the end of what was started.
@@ -674,8 +704,7 @@ func (d *decodeState) object(v reflect.Value) error {
 	}
 
 	var mapElem reflect.Value
-	origErrorContext := d.errorContext
-
+	origErrorStruct := d.errorStruct
 	for {
 		// Read opening " of string key or closing }.
 		d.scanWhile(scanSkipSpace)
@@ -749,8 +778,7 @@ func (d *decodeState) object(v reflect.Value) error {
 					}
 					subv = subv.Field(i)
 				}
-				d.errorContext.FieldStack = append(d.errorContext.FieldStack, f.name)
-				d.errorContext.Struct = t
+				d.errorStruct = t
 			} else if d.disallowUnknownFields {
 				d.saveError(fmt.Errorf("json: unknown field %q", key))
 			}
@@ -829,11 +857,7 @@ func (d *decodeState) object(v reflect.Value) error {
 		if d.opcode == scanSkipSpace {
 			d.scanWhile(scanSkipSpace)
 		}
-		// Reset errorContext to its original state.
-		// Keep the same underlying array for FieldStack, to reuse the
-		// space and avoid unnecessary allocs.
-		d.errorContext.FieldStack = d.errorContext.FieldStack[:len(origErrorContext.FieldStack)]
-		d.errorContext.Struct = origErrorContext.Struct
+		d.errorStruct = origErrorStruct
 		if d.opcode == scanEndObject {
 			break
 		}
